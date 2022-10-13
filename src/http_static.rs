@@ -1,4 +1,7 @@
-pub const SERVER: &str = r#"<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>
+/*
+faster but requires browser to have internet access
+*/
+pub const _SERVER_ONLINE: &str = r#"<script src='https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js'></script>
 <form method='POST' action='/otaupload' enctype='multipart/form-data' id='upload_form'>
   <input type='file' name='update'>
        <input type='submit' value='Update'>
@@ -34,8 +37,11 @@ error: function (a, b, c) {
 });
 </script>"#;
 
-pub const _SERVER_OLD: &str = r#"
-              <form method="POST" action="/otaupload" enctype="text/plain"><input type="file" name="data"/><input type="submit" name="upload" value="Upload" title="Upload File"></form>
+/*
+Slower but works offline
+*/
+pub const _SERVER_OFFLINE: &str = r#"
+              <form method="POST" action="/otaupload" enctype="multipart/form-data"><input type="file" name="data"/><input type="submit" name="upload" value="Upload" title="Upload File"></form>
               <p>After clicking upload it will take some time for the file to firstly upload, there is no indicator that the upload began.  Please be patient.</p>
               <p>If a file does not appear, it will be because the file was too big, or had unusual characters in the file name (like spaces).</p>
               <p>You can see the progress of the upload by watching the serial output.</p>"#;
