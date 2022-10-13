@@ -17,7 +17,6 @@ opt-level = "z"
 native = ["esp-idf-sys/native"]
 default = ["native", "experimental"]
 experimental = ["esp-idf-svc/experimental", "esp-idf-hal/experimental", "embedded-svc/experimental"]
-# factory = []
 
 [dependencies]
 esp-idf-sys = { version = "0.31.9", features = ["binstart"] }
