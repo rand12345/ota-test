@@ -2,6 +2,6 @@
 
 Update url http://\<ESP-IP\>/ota
 
-Use esptool.py to create .bin files from ELF
+Use cargo to create .bin files 
 
-```esptool.py --chip ESP32-C3 elf2image --output my-new-app.bin target/riscv32imc-esp-espidf/debug/ota-test```
+```cargo espflash save-image ota.bin```
