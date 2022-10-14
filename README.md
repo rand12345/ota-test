@@ -12,4 +12,4 @@ Use cargo to create .bin files
 
 or one line flash and reset
 
-```cargo espflash save-image ota.bin && curl -F file=@ota.bin http://10.0.1.164/ota && curl http://10.0.1.164/restart```
+```cargo espflash save-image ota.bin && curl -F file=@ota.bin http://\<ESP-IP\>/ota && curl http://\<ESP-IP\>/restart```
