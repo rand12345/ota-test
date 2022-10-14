@@ -10,14 +10,13 @@ use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
-mod http_static;
-
 #[macro_use]
 extern crate dotenv_codegen;
 
 const WIFI_SSID_KEY: &str = dotenv!("WSSID");
 const WIFI_PASS_KEY: &str = dotenv!("WPASS");
 const VERSION: &str = env!("CARGO_PKG_VERSION");
+const SERVER: &str = include_str!("server.html");
 
 fn main() -> anyhow::Result<()> {
     // Temporary. Will disappear once ESP-IDF 4.4 is released, but for now it is necessary to call this function once,
@@ -87,14 +86,18 @@ fn httpd(
             resp.send_str("Hello from Rust!")?;
             Ok(())
         })?
+        .handle_get("/restart", |_req, _resp| {
+            info!("Restart requested");
+            unsafe { esp_idf_sys::esp_restart() } // no execution beyond this point
+            Ok(())
+        })?
         .handle_get("/ota", |_req, resp| {
-            // resp.send_str(http_static::_SERVER_OFFLINE)?; // Use for AP mode
-            resp.send_str(http_static::_SERVER_ONLINE)?; // Use for STA mode
+            resp.send_str(SERVER)?;
             Ok(())
         })?
         // *********** OTA POST handler
         .handle_post(
-            "/otaupload",
+            "/ota",
             |mut req, resp| -> Result<(), embedded_svc::http::server::HandlerError> {
                 let mut ota = esp_ota::OtaUpdate::begin()?;
                 let start_time = std::time::Instant::now();
@@ -102,21 +105,25 @@ fn httpd(
                 let mut multipart_bytes_counter = 0;
 
                 let len = {
-                    match req.content_len() {
-                        Some(val) => {
-                            if val == 0 {
-                                return Err(anyhow::anyhow!("Multipart POST len = 0").into());
-                            } else {
-                                val.to_owned()
-                            }
+                    if let Some(val) = req.content_len() {
+                        if val == 0 {
+                            return Err(anyhow::anyhow!("Multipart POST len = 0").into());
+                        } else {
+                            val.to_owned()
                         }
-                        None => return Err(anyhow::anyhow!("Multipart POST len = 0").into()),
+                    } else {
+                        return Err(anyhow::anyhow!("Multipart POST len is None").into());
                     }
                 };
                 let boundary = {
                     match req.get_boundary() {
                         Some(val) => val.to_owned(),
-                        None => return Err(anyhow::anyhow!("No boundary string").into()),
+                        None => {
+                            return Err(anyhow::anyhow!(
+                                "No boundary string - check multipart form POST"
+                            )
+                            .into());
+                        }
                     }
                 };
 
@@ -146,34 +153,30 @@ fn httpd(
                         }
                         Err(e) => {
                             println!("Error! {e}\n{:02x?}", payload);
-                            resp.send_str(&format!(
-                                "<h1>Flashed {} bytes {}% FAILED</h1><br><br><p>{:02x?}</p>",
+                            drop(ota);
+                            return Err(anyhow::anyhow!(
+                                "Flashed failed at {} bytes",
                                 multipart_bytes_counter,
-                                multipart_bytes_counter as f32 / len as f32 * 100.0,
-                                payload
-                            ))?;
-                            return Ok(());
+                            )
+                            .into());
                         }
                     }
                 }
 
-                match ota.finalize() {
-                    Ok(mut completed_ota) => {
-                        info!("Flashed {} bytes OK", ota_bytes_counter);
+                if let Ok(mut completed_ota) = ota.finalize() {
+                    info!("Flashed {} bytes OK", ota_bytes_counter);
 
-                        completed_ota.set_as_boot_partition()?;
-                        info!("Set as boot partition - restarting");
+                    completed_ota.set_as_boot_partition()?;
+                    info!("Set as boot partition - restart required");
 
-                        // this panics due to WIFI issue - also hangs browser in AP mode
-                        // thread '<unnamed>' panicked at 'ESP-IDF ERROR: ESP_ERR_WIFI_NOT_STARTED',
-                        completed_ota.restart();
-                    }
-                    Err(e) => {
-                        resp.send_str(&format!(
-                            "<h1>Flashed {} bytes FAILED</h1><br><br><p>{e}</p>",
-                            len,
-                        ))?;
-                    }
+                    // send plin string back for html alert box
+                    resp.send_str(&format!(
+                        "Flashed {multipart_bytes_counter} bytes in {:?} - Reboot",
+                        start_time.elapsed()
+                    ))?;
+                } else {
+                    // drop(ota);
+                    return Err(anyhow::anyhow!("Flashed {} bytes failed", len).into());
                 };
                 Ok(())
             },
