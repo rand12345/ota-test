@@ -4,7 +4,7 @@ Update url http://\<ESP-IP\>/ota
 
 Update using cURL (WIP)
 
-```curl -F file=@app.bin http://\<ESP-IP\>/ota```
+```curl -F file=@app.bin http://<ESP-IP>/ota```
 
 Use cargo to create .bin files 
 
@@ -12,4 +12,4 @@ Use cargo to create .bin files
 
 or one line flash and reset
 
-```cargo espflash save-image ota.bin && curl -F file=@ota.bin http://\<ESP-IP\>/ota && curl http://\<ESP-IP\>/restart```
+```cargo espflash save-image ota.bin && curl -F file=@ota.bin http://<ESP-IP>/ota && curl http://<ESP-IP>/restart```
