@@ -2,8 +2,9 @@
 <html lang="en">
 
 <head>
+    <meta charset="utf-8" lang="en" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ESP32 Over-the-Air Firmware Updater</title>
     <style>
         body>div {
@@ -11,7 +12,7 @@
             top: 50%;
             left: 50%;
             border: 1px solid grey;
-            min-width: 375px;
+            max-width: 70vw;
             box-shadow: 0 1em 1em -.4em #000;
             border-radius: 10px;
             background-color: lightgray;
@@ -19,95 +20,106 @@
         }
 
         .grid {
-            display: grid
-        }
-
-        .logo {
-            min-width: 4em;
-            min-height: 4em;
-            position: absolute;
-            top: 1em;
-            left: 1em;
-            background-image: url("data:image/svg+xml,%3Csvg width='400' height='400' xmlns='http://www.w3.org/2000/svg' xml:space='preserve'%3E%3Cpath d='M209 401h-12l-3-9c-2-2-5-5-8-5-1-1-4 3-6 5l-4 9h-8l-3-7-3-8c-2-4-5-5-9-2l-6 7c-1 2-2 3-4 3-6 0-8-3-8-9v-3c-1-3-3-6-5-7-1-1-5 0-7 1l-7 7c-11-4-10-4-8-11 1-4 0-9-4-10-3-1-7 1-10 3s-4 4-9 1c-4-2-5-5-3-10 2-3 2-7-1-10-4-4-8-2-11 0l-1 1c-3 3-6 2-10-1-3-3-2-6 0-9 2-4 2-8-1-12-4-3-8-2-11 0-4 3-5 1-8-1-4-5-2-8 1-12 2-2 4-5 2-9-2-3-5-3-8-3h-4c-6 2-7-2-9-5-2-4 1-5 3-7l3-5c3-5 1-9-5-10h-7l-4-1c-3-5-2-9 2-12 3-2 6-6 5-9 0-4-3-7-8-7l-9-2v-10l9-5c1-1 3-5 2-7 0-3-3-4-6-6l-5-1v-12l7-3c5-2 6-8 2-12l-9-4v-12l6-1c4 0 8-1 9-5 1-5-2-8-5-10-7-5-7-5-4-14h7c6 0 10-2 11-7s-3-8-6-10-5-3-3-6c1-3 3-7 8-6l6 2c6 0 10-4 8-10l-5-8c-2-2-4-4-1-7 2-3 4-5 8-3l8 3c4 1 8-3 8-6-1-3-1-6-3-8-4-8-4-8 2-14v-2c5 3 8 6 12 7 2 1 6 0 7-1 2-2 2-5 2-8l-2-7c-2-4 1-6 3-7 3-2 5-3 7 0l8 5c3 1 7 1 8-1 2-1 2-5 2-8l-1-5c-2-4-2-6 2-8 4-3 6-2 9 2l5 5c4 3 6 3 10-1 4-5 2-9 0-14-1-6 4-5 6-6 3-1 5 0 6 3 1 5 5 8 9 10 3 2 7 0 8-4l1-6V4l7-3h3c2 6 4 12 8 16 4 5 9 4 11-3l1-13h13c2 6 2 11 5 15 3 5 8 4 11-1l4-14h11l2 16c1 3 4 6 6 7 4 1 6-2 8-5l3-9c1-2 2-4 5-2l4 1c4 0 5 2 3 5l-2 7c0 4 0 8 4 10 4 3 8 0 11-3 2-1 4-4 5-7s2-3 5-2l4 1c3 2 4 3 2 7-2 2-3 5-3 8s1 7 3 9c1 1 6 0 8-1l9-8c1-2 2-2 5-1 7 5 7 5 3 12l-3 6c-1 3-1 7 2 9 3 1 8 1 10-1 4-1 8-5 11-8l6 5c3 2 2 4 0 6l-6 8v8c2 2 6 3 9 3l10-5c5-2 6 2 8 5 2 2 2 3 0 5l-9 12c-1 1 0 4 1 5 3 4 10 5 16 1s6-5 10 3c2 4 0 5-3 7l-8 7c-4 5-1 11 5 12l11-2c3-1 5-1 6 3 1 3 4 7-2 9l-7 4c-2 2-5 6-4 8 1 3 4 6 7 6h15v11l-12 4-5 8c0 4 4 7 8 8l9 1v12l-12 2c-2 1-5 4-6 7 0 2 3 6 5 7 4 2 9 2 13 3v11l-12 1c-4 1-8 1-10 6-1 4 2 7 5 10l5 2c5 1 5 4 4 8-1 5-3 4-7 4h-10c-7 2-8 7-3 12l6 5c4 3 3 5 2 9-2 3-4 3-7 2l-8-2c-6 0-9 5-7 10l7 10 1 4-3 4c-2 2-4 3-6 0-4-4-8-4-12-3-6 1-8 6-4 11l6 9c-5 8-5 8-13 4l-10-3c-4 0-7 4-6 8l4 8c1 3 2 5-2 8-3 2-6 3-9-1-5-4-10-5-13-3-4 3-5 7-2 14l1 2-2 4-7 3-4-6c-3-3-7-5-12-4-4 1-4 6-4 9l1 5-2 4c-5 5-8 4-11-2l-2-3c-3-1-6-4-8-3-3 0-6 4-7 6-1 5-1 10-5 13h-7c-2-5-4-9-7-12-2-3-7-3-9 1l-3 11m74-338a161 161 0 0 0-88-25l-25 3c-34 5-63 21-88 45a162 162 0 0 0-28 197 165 165 0 0 0 213 67 177 177 0 0 0 75-70 166 166 0 0 0 17-111l-11-29c-13-33-35-58-65-77z' fill='%234D4D4D'/%3E%3Cpath d='M254 225c6 13 10 26 11 41l1 27-3 22-4 4-21 7-8-2-14-5c8-16 8-32 7-49-2-18-9-35-20-49a103 103 0 0 0-79-42c-5 0-8 3-9 7s2 7 7 8c9 2 19 3 28 6 20 7 36 21 46 39a91 91 0 0 1 0 87c-2 4-5 3-9 3-5-1-11-1-15-3l-18-12 9-20c5-16 1-29-10-41-9-11-21-15-35-16-23-2-42-18-45-43-2-17 2-32 15-44 12-11 27-16 44-13 10 2 20 2 29 5a140 140 0 0 1 93 83z' fill='%23F2241F'/%3E%3Cpath d='M185 88a218 218 0 0 1 85 55c21 23 36 48 45 77l8 34c1 6-3 11-6 15l-10 13c-1 2-3 3-5 3h-20a163 163 0 0 0-165-165V99c1-4 6-7 10-10s8-7 13-8c4-2 9-2 14-1l31 8z' fill='%23F2241F'/%3E%3Cpath d='M109 305a149 149 0 0 0 88 36 141 141 0 0 0 108-39l3-3 9 9c-35 34-77 50-124 46-68-7-116-43-137-108-20-60-6-114 37-160l6 3c4 3 4 6 1 9a145 145 0 0 0-17 175l14 20h2l-1-1c-3-13-1-23 9-30 9-5 22-4 29 4 8 7 9 20 4 29-6 9-18 13-30 9l-1-1v2zm191-202c29 29 40 64 38 104l-4 3-6 1A218 218 0 0 0 192 74c1-10 2-10 10-10a131 131 0 0 1 98 39z' fill='%23F2241F'/%3E%3Cpath d='m98 292 1 1h-2l1-1zm12 12-1-1 1 1z'/%3E%3C/svg%3E");
-            background-size: 4em;
-            background-repeat: no-repeat;
-            background-attachment: fixed
+            display: grid;
         }
 
         form {
-            padding: 1em
+            padding: 0 1em 1em 1em
         }
 
         h1 {
             font-family: Verdana, Geneva, Tahoma, sans-serif;
-            text-align: right;
-            font-size: 32pt;
+            text-align: center;
+            font-size: 1.8em;
             color: #292929;
-            margin: .5em .5em 0 1.5em;
-            text-shadow: 1px 1px #fff
+            margin: .5em 1.5em 0 1.5em;
+            text-shadow: 1px 1px #fff;
+            font-weight: 600;
         }
 
-        input[type="file" i] {
+        hr {
+            height: 2px;
+        }
+
+        pre {
+            margin: 1em;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        input[type="file"] {
             color: #292929
         }
 
-        input[type="submit" i] {
+        input[type="submit"] {
             padding: .5em 0;
-            background-color: #8b0000;
-            border-radius: 5px
+            background-color: #d61010;
+            border-radius: 5px;
+            text-shadow: 2px 2px #111;
+            box-shadow: 0 1px 1px -1px #000;
         }
 
         input {
+            position: relative;
+            max-width: 60vw;
             text-align: center;
             text-overflow: ellipsis;
             appearance: none;
             -webkit-appearance: none;
             padding: 0;
-            margin: .2em;
+            margin: 0.2em;
             color: #fff;
             font-size: 1.2em;
             font-weight: 600
         }
 
-        input[type="submit" i]:hover {
-            background-color: #d61010
+        input[type="submit" i]:active {
+
+
+            background-color: #8b0000;
         }
     </style>
-    <script>
-        "use strict";
-        function submitForm(oFormElement) {
-            var xhr = new XMLHttpRequest();
-            xhr.onload = function () {
-                if (xhr.responseText.includes("!DOCTYPE html5")) {
-                    var parser = new DOMParser();
-                    var xmlDoc = parser.parseFromString(xhr.responseText, "text/xml");
-                    document.querySelector("#resp").innerHTML = xmlDoc.body.innerHTML;
-                } else {
-                    alert(xhr.responseText);
-                    fetch("/restart");
-                    alert("Device is rebooting");
-                };
-            }
-            xhr.open(oFormElement.method, oFormElement.action, true);
-            xhr.send(new FormData(oFormElement));
-            return false;
-        }
-    </script>
+
 </head>
 
 <body>
     <div id="resp">
-        <div>
-            <div class="logo"></div>
-            <h1>ESP32 OTA</h1>
-        </div>
-
+        <h1>ESP32 OTA</h1>
+        <hr>
         <form class="form grid2 grid" method="POST" action="/ota" enctype='multipart/form-data'
             onsubmit="return submitForm(this);">
             <input type='file' name='update' title="bin file">
-            <input type='submit' value='Update'>
+            <input class="pushable" type='submit' value='Update' id="submit_button" onclick="return submitClick(this);">
+            </input>
         </form>
     </div>
 </body>
+<script>
+    "use strict";
+    function submitClick(btn) {
+        btn.value = "Updating";
+        return true;
+    }
+    function submitForm(oFormElement) {
+        var xhr = new XMLHttpRequest();
+        xhr.onload = function () {
+            if (xhr.responseText.includes("DOCTYPE")) {
+                var parser = new DOMParser();
+                var htmlDoc = parser.parseFromString(xhr.responseText, "text/html");
+                var body_html = htmlDoc.querySelector("body");
+                document.getElementById("resp").innerHTML = body_html.innerHTML;
+            } else {
+                alert(xhr.responseText + " - Close to reboot device");
+                var submit_button = document.getElementById("submit_button");
+                submit_button.value = "Updated";
+                fetch("/restart");
+                alert("Device is rebooting");
+            };
+        }
+        xhr.open(oFormElement.method, oFormElement.action, true);
+        xhr.send(new FormData(oFormElement));
+        return false;
+    }
+</script>
 
 </html>
