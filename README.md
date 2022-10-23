@@ -2,6 +2,14 @@
 
 Update url http://\<ESP-IP\>/ota
 
-Use esptool.py to create .bin files from ELF
+Update using cURL (WIP)
 
-```esptool.py --chip ESP32-C3 elf2image --output my-new-app.bin target/riscv32imc-esp-espidf/debug/ota-test```
+```curl -F file=@app.bin http://<ESP-IP>/ota```
+
+Use cargo to create .bin files 
+
+```cargo espflash save-image ota.bin```
+
+or one line flash and reset
+
+```cargo espflash save-image ota.bin && curl -F file=@ota.bin http://<ESP-IP>/ota && curl http://<ESP-IP>/restart```
