@@ -96,7 +96,8 @@ impl NvsStorage for EspNvsStorage {
 }
 
 impl AppConfiguration {
-    pub fn erase_values_in_nvs(&mut self, store: Arc<RwLock<EspNvsStorage>>) -> anyhow::Result<()> {
+    pub fn erase_values_in_nvs(&mut self) -> anyhow::Result<()> {
+        let store = self.nvs.as_ref().unwrap().clone();
         info!("Erasing old data in NVS");
         if let Ok(mut store) = store.write() {
             for val in ["ap", "sta", "bms", "mqtt"] {
@@ -131,19 +132,21 @@ impl AppConfiguration {
             false
         };
 
+        let store = self.nvs.as_ref().unwrap().clone();
         if valid {
-            self.ap.read_from_nvs(&nvs)?;
-            self.sta.read_from_nvs(&nvs)?;
-            self.bms.read_from_nvs(&nvs)?;
-            self.mqtt.read_from_nvs(&nvs)?;
+            self.ap.read_from_nvs(&store)?;
+            self.sta.read_from_nvs(&store)?;
+            self.bms.read_from_nvs(&store)?;
+            self.mqtt.read_from_nvs(&store)?;
         } else {
-            self.erase_values_in_nvs(nvs.clone())?;
-            self.store_values_to_nvs(nvs.clone())?;
+            self.erase_values_in_nvs()?;
+            self.store_values_to_nvs()?;
         }
         Ok(())
     }
 
-    pub fn store_values_to_nvs(&mut self, store: Arc<RwLock<EspNvsStorage>>) -> anyhow::Result<()> {
+    pub fn store_values_to_nvs(&mut self) -> anyhow::Result<()> {
+        let store = self.nvs.as_ref().unwrap().clone();
         info!("Storing all settings to NVS");
         if self.ap.nvs.is_empty() {
             eprintln!("Attempted to call store on an empty");

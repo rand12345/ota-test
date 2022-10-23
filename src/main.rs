@@ -84,7 +84,7 @@ fn main() -> anyhow::Result<()> {
     let mutex = Arc::new((Mutex::new(None), Condvar::new()));
     let _httpd = httpd(mutex)?;
 
-    println!("FW version: {} testing 1", VERSION);
+    println!("FW version: {} testing", VERSION);
     println!("{:?}", wifi_scan);
     esp_ota::mark_app_valid();
 
@@ -139,12 +139,15 @@ fn httpd(_mutex: Arc<(Mutex<Option<u32>>, Condvar)>) -> anyhow::Result<EspHttpSe
                     .map(|p| p.1.to_string())
                     .next()
                     .unwrap();
-
-                
-
-                resp.send_str(
-                &format!("Wifi setup completed {} {}, please reconnect to your home wifi to continue installation", ssid, pass),
-            )?;
+                if let Ok(mut app_config) = APP_CONFIG.write() {
+                    app_config.sta.ssid = Some(ssid.to_owned());
+                    app_config.sta.pass = Some(pass.to_owned());
+                    app_config.store_values_to_nvs()?;
+                }
+                resp.send_str(&format!(
+                    "Wifi setup completed for SSID: {} Password: {}, please reboot to connect",
+                    ssid, pass
+                ))?;
 
                 Ok(())
             },
