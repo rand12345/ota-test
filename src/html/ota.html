@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" lang="en" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Over-the-Air Firmware Updater</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+    <style>
+        /* probably won't work */
+        pre {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <h1>OTA Firmware Updater</h1>
+        <details role="list">
+            <summary aria-haspopup="listbox">Navigation</summary>
+            <ul role="listbox">
+                <li><a href="./">Home</a></li>
+                <li><a href="./settings">Settings</a></li>
+                <li><a href="./ota">OTA</a></li>
+                <li><a href="./restart">Restart</a></li>
+            </ul>
+        </details>
+    </nav>
+    <article id="resp">
+        <form method="POST" action="/ota" enctype='multipart/form-data' onsubmit="return submitForm(this);">
+            <label for="file">Upload firmware update
+                <input type='file' name='update' title="bin file" id="file"></label>
+            <button type='submit' value='Update' id="submit_button" onclick="return submitClick(this);"
+                aria-busy="false" aria-live="assertive">Update</button>
+            </input>
+        </form>
+    </article>
+</body>
+<script>
+    "use strict";
+    function submitClick(btn) {
+        btn.value = "Updating";
+        btn.ariaBusy = "true";
+        return true;
+    }
+    function submitForm(oFormElement) {
+        var xhr = new XMLHttpRequest();
+        xhr.onload = function () {
+            var submit_button = document.getElementById("submit_button");
+            if (xhr.responseText.includes("DOCTYPE")) {
+                var parser = new DOMParser();
+                var htmlDoc = parser.parseFromString(xhr.responseText, "text/html");
+                var body_html = htmlDoc.querySelector("body");
+                document.getElementById("resp").innerHTML = body_html.innerHTML;
+            } else {
+                alert(xhr.responseText + " - Close to reboot device");
+                submit_button.innerHTML = "Updated";
+                submit_button.ariaBusy = "false";
+                fetch("/restart").catch();
+                alert("Device is rebooting");
+            };
+        }
+        xhr.open(oFormElement.method, oFormElement.action, true);
+        xhr.send(new FormData(oFormElement));
+        return false;
+    }
+</script>
+
+</html>

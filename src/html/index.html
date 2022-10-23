@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" lang="en" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <link rel="stylesheet" href="https://unpkg.com/mvp.css@1.12/mvp.css"> -->
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+
+    <title>BMS</title>
+</head>
+
+<body>
+    <nav>
+        <h1>Home</h1>
+        <details role="list">
+            <summary aria-haspopup="listbox">Navigation</summary>
+            <ul role="listbox">
+                <li><a href="./">Home</a></li>
+                <li><a href="./settings">Settings</a></li>
+                <li><a href="./ota">OTA</a></li>
+                <li><a href="./restart">Restart</a></li>
+            </ul>
+        </details>
+    </nav>
+    <article>
+        <section>
+            <h2>Snapshot data -
+                <script> document.write(new Date().toLocaleTimeString()); </script>
+        </section>
+        </h2>
+        <section>
+            <div id="data_id"></div>
+        </section>
+    </article>
+    <footer>
+        <hr>
+        <section><a href="mailto:my@email.com">Support</a></section>
+    </footer>
+</body>
+<script>
+    async function loadJSON(url) {
+        const res = await fetch(url);
+        return await res.json();
+    }
+    window.addEventListener("load", () => {
+        loadJSON('./json').then(data => {
+            var table = document.createElement("table"), row, cellA, cellB;
+            let col1 = document.createElement("th");
+            col1.innerHTML = "BMS Attribute";
+            let col2 = document.createElement("th");
+            col2.innerHTML = "Value";
+            head = document.createElement("thead");
+            head.appendChild(col1);
+            head.appendChild(col2);
+            table.appendChild(head);
+            document.getElementById("data_id").appendChild(table);
+
+            for (var key in data) {
+                if (key == "temps") { continue };
+                row = table.insertRow();
+                cellA = row.insertCell();
+                cellB = row.insertCell();
+                cellA.innerHTML = key.replaceAll("_", " ");
+                try { cellB.innerHTML = data[key].join(", "); }
+                catch { cellB.innerHTML = data[key]; }
+            }
+        }).catch(err => {
+            console.error(err);
+            var error_title = document.createElement("h1").innerHTML = "Internal data error";
+            document.getElementById("data_id").appendChild(table);
+        });
+    });
+</script>
+
+</html>
