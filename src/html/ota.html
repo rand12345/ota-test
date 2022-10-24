@@ -60,8 +60,8 @@
                 alert(xhr.responseText + " - Close to reboot device");
                 submit_button.innerHTML = "Updated";
                 submit_button.ariaBusy = "false";
-                fetch("/restart").catch();
-                alert("Device is rebooting");
+                // fetch("/restart").catch();
+                // alert("Device is rebooting");
             };
         }
         xhr.open(oFormElement.method, oFormElement.action, true);

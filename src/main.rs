@@ -1,11 +1,11 @@
 use embedded_svc::http::server::registry::Registry;
 use embedded_svc::http::server::{Request, Response};
-use embedded_svc::http::Headers;
+// use embedded_svc::http::Headers;
 use embedded_svc::io::adapters::ToStd;
 use esp_idf_hal::mutex::{Condvar, Mutex};
 use esp_idf_svc::http::server::EspHttpServer;
 use esp_idf_svc::netif::EspNetifStack;
-use esp_idf_svc::nvs::{self, EspDefaultNvs};
+use esp_idf_svc::nvs::EspDefaultNvs;
 use esp_idf_svc::nvs_storage::EspNvsStorage;
 use esp_idf_svc::sysloop::EspSysLoopStack;
 use esp_idf_svc::wifi::EspWifi;
@@ -54,6 +54,7 @@ fn main() -> anyhow::Result<()> {
     let nvs_storage = Arc::new(RwLock::new(
         EspNvsStorage::new_default(nvs.clone(), "config", true).unwrap(),
     ));
+    let request_restart = Arc::new(Mutex::new(false));
 
     if let Ok(mut app_config) = APP_CONFIG.write() {
         if let Err(e) = app_config.init(nvs_storage.clone()) {
@@ -82,18 +83,40 @@ fn main() -> anyhow::Result<()> {
     wifi = wifi_init::wifi(wifi, sta, ap)?;
 
     let mutex = Arc::new((Mutex::new(None), Condvar::new()));
-    let _httpd = httpd(mutex)?;
+    let httpd = httpd(mutex, request_restart.clone())?;
 
     println!("FW version: {} testing", VERSION);
     println!("{:?}", wifi_scan);
     esp_ota::mark_app_valid();
 
-    // let _ = wifi_init::scan(wifi);
     loop {
+        if *request_restart.lock() {
+            log::info!("Restart requested");
+            thread::sleep(Duration::from_secs(2));
+            break;
+        }
         thread::sleep(Duration::from_secs(1));
     }
+    drop(httpd);
+    info!("Httpd stopped");
+
+    {
+        drop(wifi);
+        info!("Wifi stopped");
+    }
+
+    if *request_restart.lock() {
+        unsafe {
+            info!("Restarting...");
+            esp_idf_sys::esp_restart();
+        }
+    }
+    Ok(())
 }
-fn httpd(_mutex: Arc<(Mutex<Option<u32>>, Condvar)>) -> anyhow::Result<EspHttpServer> {
+fn httpd(
+    _mutex: Arc<(Mutex<Option<u32>>, Condvar)>,
+    request_restart: Arc<Mutex<bool>>,
+) -> anyhow::Result<EspHttpServer> {
     let mut server = EspHttpServer::new(&Default::default())?;
 
     server
@@ -102,7 +125,6 @@ fn httpd(_mutex: Arc<(Mutex<Option<u32>>, Condvar)>) -> anyhow::Result<EspHttpSe
             Ok(())
         })?
         .handle_get("/", move |_req, resp| {
-            // resp.send_str(&wifi_status)?;
             resp.send_str(HTMLINDEX)?;
             Ok(())
         })?
@@ -113,8 +135,9 @@ fn httpd(_mutex: Arc<(Mutex<Option<u32>>, Condvar)>) -> anyhow::Result<EspHttpSe
             }
             Ok(())
         })?
-        .handle_get("/restart", |_req, _resp| {
+        .handle_get("/restart", |_req, resp| {
             info!("Restart requested");
+            resp.send_str("Rebooting")?;
             unsafe { esp_idf_sys::esp_restart() } // no execution beyond this point
             Ok(())
         })?
@@ -159,8 +182,23 @@ fn httpd(_mutex: Arc<(Mutex<Option<u32>>, Condvar)>) -> anyhow::Result<EspHttpSe
         // *********** OTA POST handler
         .handle_post(
             "/ota",
-            |req, resp| -> Result<(), embedded_svc::http::server::HandlerError> {
-                ota::ota_processing(req, resp)
+            move |req, resp| -> Result<(), embedded_svc::http::server::HandlerError> {
+                let response = match ota::ota_processing(req, &resp) {
+                    Ok(elapsed) => {
+                        if let Some(time) = elapsed {
+                            *request_restart.lock() = true;
+                            format!(
+                                "Flashed device in {:?} - Rebooting in 2 seconds",
+                                time.elapsed()
+                            )
+                        } else {
+                            "Error?".to_string()
+                        }
+                    }
+                    Err(_) => todo!(),
+                };
+                resp.send_str(&response)?;
+                Ok(())
             },
         )?;
     Ok(server)

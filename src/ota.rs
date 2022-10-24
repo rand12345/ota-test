@@ -9,22 +9,26 @@ use log::info;
 use embedded_svc::io::Read;
 use std::time::{Duration, Instant};
 
-use embedded_svc::http::server::{Request, Response};
+use embedded_svc::http::server::Request;
 
-pub fn ota_processing(mut req: EspHttpRequest, resp: EspHttpResponse) -> Result<(), HandlerError> {
+pub fn ota_processing(
+    mut req: EspHttpRequest,
+    resp: &EspHttpResponse,
+) -> Result<Option<Instant>, HandlerError> {
     if req.content_len().is_none() || req.content_len() == Some(0) {
         return Err(anyhow!("Multipart POST len is None").into());
     };
 
     if req.get_boundary().is_none() {
         return Err(anyhow!("No boundary string, check multipart form POST").into());
+    } else {
+        info!("Using boundary: {}", req.get_boundary().unwrap());
     }
     let start_time = Instant::now();
     let mut ota = OtaUpdate::begin()?;
     let mut ota_bytes_counter = 0;
     let mut multipart_bytes_counter = 0;
-    let mut buf = [0u8; 2048];
-
+    let mut buf = [0u8; 1508];
     while let Ok(bytelen) = req.reader().read(&mut buf) {
         if start_time.elapsed() > Duration::from_millis(900) {
             std::thread::sleep(Duration::from_millis(10)) //wdt
@@ -35,10 +39,15 @@ pub fn ota_processing(mut req: EspHttpRequest, resp: EspHttpResponse) -> Result<
         let payload = req.extract_payload(&buf[..bytelen]);
         multipart_bytes_counter += bytelen;
         ota_bytes_counter += &payload.len();
-
         if let Err(e) = ota.write(payload) {
             println!("Error! {e}\n{:02x?}", payload);
-            return Err(anyhow!("Flashed failed at {} bytes", multipart_bytes_counter,).into());
+
+            return Err(anyhow!(
+                "Flashed failed at {} bytes\n{}",
+                multipart_bytes_counter,
+                String::from_utf8_lossy(payload)
+            )
+            .into());
         } else {
             info!(
                 "Upload: {}%",
@@ -46,15 +55,16 @@ pub fn ota_processing(mut req: EspHttpRequest, resp: EspHttpResponse) -> Result<
             );
         };
     }
-    finalise_ota(ota, ota_bytes_counter, resp, start_time)
+
+    finalise_ota(ota, ota_bytes_counter, start_time)
 }
 
 fn finalise_ota(
     ota: esp_ota::OtaUpdate,
     ota_bytes_counter: usize,
-    resp: EspHttpResponse,
+    // resp: &EspHttpResponse,
     start_time: Instant,
-) -> Result<(), HandlerError> {
+) -> Result<Option<Instant>, HandlerError> {
     match ota.finalize() {
         Ok(mut completed_ota) => {
             info!(
@@ -66,11 +76,8 @@ fn finalise_ota(
             info!("Set as boot partition - restart required");
 
             // send plain string back for html alert box
-            resp.send_str(&format!(
-                "Flashed {ota_bytes_counter} bytes in {:?}",
-                start_time.elapsed()
-            ))?;
-            Ok(())
+
+            Ok(Some(start_time))
         }
         Err(e) => Err(anyhow!("Flashed {ota_bytes_counter} bytes failed - {e}").into()),
     }
@@ -100,6 +107,9 @@ impl Multipart for EspHttpRequest<'_> {
         }
     }
     fn extract_payload<'a>(&self, buf: &'a [u8]) -> &'a [u8] {
+        if twoway::find_bytes(buf, &[13, 10]).is_none() {
+            return buf;
+        }
         if twoway::find_bytes(buf, self.get_boundary().unwrap().as_bytes()).is_none() {
             return buf;
         }

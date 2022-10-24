@@ -6,13 +6,13 @@ use anyhow::{bail, Result};
 use embedded_svc::ipv4::{self};
 use embedded_svc::ping::Ping;
 use embedded_svc::wifi::*;
-use esp_idf_svc::netif::EspNetifStack;
-use esp_idf_svc::nvs::EspDefaultNvs;
+// use esp_idf_svc::netif::EspNetifStack;
+// use esp_idf_svc::nvs::EspDefaultNvs;
 use esp_idf_svc::ping;
-use esp_idf_svc::sysloop::EspSysLoopStack;
+// use esp_idf_svc::sysloop::EspSysLoopStack;
 use esp_idf_svc::wifi::EspWifi;
 use log::info;
-use std::sync::Arc;
+// use std::sync::Arc;
 use std::time::Duration;
 
 use crate::configuration;
