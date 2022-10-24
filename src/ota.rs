@@ -5,7 +5,7 @@ use embedded_svc::http::Headers;
 use embedded_svc::io::Write;
 use embedded_svc::ota::{Ota, OtaSlot, OtaUpdate};
 use esp_idf_svc::http::server::EspHttpRequest;
-use esp_idf_svc::ota::EspOta;
+use esp_idf_svc::ota::*;
 // use esp_ota::*;
 use log::info;
 
@@ -13,6 +13,33 @@ use embedded_svc::io::Read;
 use std::time::{Duration, Instant};
 
 use embedded_svc::http::server::Request;
+
+pub fn mark_app_valid(ok: bool) -> anyhow::Result<()> {
+    let mut ota = EspOta::new()?;
+    if ok {
+        if let Err(e) = ota.mark_running_slot_valid() {
+            return Err(anyhow!("{}", e));
+        } else {
+            let slot = ota.get_running_slot()?;
+            info!(
+                "Running slot: Firmware info = {:?}",
+                slot.get_firmware_info()
+            );
+            info!("Running slot: Label info = {:?}", slot.get_label());
+            info!("Running slot: State info = {:?}", slot.get_state());
+            let slot = ota.get_update_slot()?;
+            info!(
+                "Updating slot: Firmware info = {:?}",
+                slot.get_firmware_info()
+            );
+            info!("Updating slot: Label info = {:?}", slot.get_label());
+            info!("Updating slot: State info = {:?}", slot.get_state());
+            return Ok(());
+        }
+    }
+    ota.mark_running_slot_invalid_and_reboot();
+    Ok(())
+}
 
 pub fn ota_processing(
     mut req: EspHttpRequest,

@@ -87,7 +87,8 @@ fn main() -> anyhow::Result<()> {
 
     println!("FW version: {} testing", VERSION);
     println!("{:?}", wifi_scan);
-    esp_ota::mark_app_valid();
+
+    ota::mark_app_valid(true)?;
 
     loop {
         if *request_restart.lock() {
