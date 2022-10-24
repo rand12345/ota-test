@@ -183,7 +183,7 @@ fn httpd(
         .handle_post(
             "/ota",
             move |req, resp| -> Result<(), embedded_svc::http::server::HandlerError> {
-                let response = match ota::ota_processing(req, &resp) {
+                let response = match ota::ota_processing(req) {
                     Ok(elapsed) => {
                         if let Some(time) = elapsed {
                             *request_restart.lock() = true;

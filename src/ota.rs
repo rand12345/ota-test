@@ -2,8 +2,11 @@ use anyhow::anyhow;
 use anyhow::Result;
 use embedded_svc::http::server::HandlerError;
 use embedded_svc::http::Headers;
-use esp_idf_svc::http::server::{EspHttpRequest, EspHttpResponse};
-use esp_ota::*;
+use embedded_svc::io::Write;
+use embedded_svc::ota::{Ota, OtaSlot, OtaUpdate};
+use esp_idf_svc::http::server::EspHttpRequest;
+use esp_idf_svc::ota::EspOta;
+// use esp_ota::*;
 use log::info;
 
 use embedded_svc::io::Read;
@@ -13,7 +16,7 @@ use embedded_svc::http::server::Request;
 
 pub fn ota_processing(
     mut req: EspHttpRequest,
-    resp: &EspHttpResponse,
+    // resp: &EspHttpResponse,
 ) -> Result<Option<Instant>, HandlerError> {
     if req.content_len().is_none() || req.content_len() == Some(0) {
         return Err(anyhow!("Multipart POST len is None").into());
@@ -25,11 +28,14 @@ pub fn ota_processing(
         info!("Using boundary: {}", req.get_boundary().unwrap());
     }
     let start_time = Instant::now();
-    let mut ota = OtaUpdate::begin()?;
+    let mut ota = EspOta::new().unwrap();
+    let mut ota_update = ota.initiate_update().unwrap();
+
+    // let mut ota = OtaUpdate::begin()?;
     let mut ota_bytes_counter = 0;
     let mut multipart_bytes_counter = 0;
-    let mut buf = [0u8; 1508];
-    while let Ok(bytelen) = req.reader().read(&mut buf) {
+    let mut buf = Box::new([0u8; 1440 * 3]);
+    while let Ok(bytelen) = req.reader().read(&mut *buf) {
         if start_time.elapsed() > Duration::from_millis(900) {
             std::thread::sleep(Duration::from_millis(10)) //wdt
         }
@@ -39,9 +45,10 @@ pub fn ota_processing(
         let payload = req.extract_payload(&buf[..bytelen]);
         multipart_bytes_counter += bytelen;
         ota_bytes_counter += &payload.len();
-        if let Err(e) = ota.write(payload) {
-            println!("Error! {e}\n{:02x?}", payload);
 
+        if let Err(e) = ota_update.write_all(payload) {
+            info!("failed to write update with: {:?}", e);
+            ota_update.abort()?;
             return Err(anyhow!(
                 "Flashed failed at {} bytes\n{}",
                 multipart_bytes_counter,
@@ -50,38 +57,27 @@ pub fn ota_processing(
             .into());
         } else {
             info!(
-                "Upload: {}%",
+                "Recieved {bytelen}b, flashed {}b -> Progeress {}%",
+                &payload.len(),
                 (multipart_bytes_counter as f32 / req.content_len().unwrap() as f32) * 100.0
             );
-        };
-    }
-
-    finalise_ota(ota, ota_bytes_counter, start_time)
-}
-
-fn finalise_ota(
-    ota: esp_ota::OtaUpdate,
-    ota_bytes_counter: usize,
-    // resp: &EspHttpResponse,
-    start_time: Instant,
-) -> Result<Option<Instant>, HandlerError> {
-    match ota.finalize() {
-        Ok(mut completed_ota) => {
-            info!(
-                "Flashed {ota_bytes_counter} bytes in {:?}",
-                start_time.elapsed()
-            );
-
-            completed_ota.set_as_boot_partition()?;
-            info!("Set as boot partition - restart required");
-
-            // send plain string back for html alert box
-
-            Ok(Some(start_time))
         }
-        Err(e) => Err(anyhow!("Flashed {ota_bytes_counter} bytes failed - {e}").into()),
     }
+    if let Err(e) = ota_update.complete() {
+        eprintln!("OTA Error at completion {e}");
+        return Err(anyhow!("Flashed failed at completion stage").into());
+    };
+
+    Ok(Some(start_time))
 }
+
+// fn finalise_ota(
+//     ota: esp_ota::OtaUpdate,
+//     ota_bytes_counter: usize,
+//     // resp: &EspHttpResponse,
+//     start_time: Instant,
+// ) -> Result<Option<Instant>, HandlerError> {
+// }
 
 trait Multipart {
     fn get_boundary(&self) -> Option<&str>;

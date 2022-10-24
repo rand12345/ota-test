@@ -57,11 +57,10 @@
                 var body_html = htmlDoc.querySelector("body");
                 document.getElementById("resp").innerHTML = body_html.innerHTML;
             } else {
-                alert(xhr.responseText + " - Close to reboot device");
+                alert(xhr.responseText);
                 submit_button.innerHTML = "Updated";
                 submit_button.ariaBusy = "false";
                 // fetch("/restart").catch();
-                alert("Device is rebooting");
             };
         }
         xhr.open(oFormElement.method, oFormElement.action, true);
